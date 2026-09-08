@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 650">
+<path d="M115 610L155 190H265L305 610Z" fill="#684b52"/>
+<path d="M145 610L175 205H245L275 610Z" fill="#8b6570"/>
+<path d="M210 205V110" stroke="#5a3f46" stroke-width="16"/>
+<circle cx="210" cy="105" r="25" fill="#f3c56b"/>
+<g fill="#e6b75e">
+<path d="M205 105 L190 5 L220 5 L215 105Z"/>
+<path d="M210 105 L310 75 L320 105 L215 120Z"/>
+<path d="M210 105 L230 205 L200 205 L195 115Z"/>
+<path d="M210 105 L110 135 L100 105 L205 90Z"/>
+</g>
+<g fill="#f4c86b"><rect x="168" y="270" width="35" height="55" rx="6"/><rect x="217" y="270" width="35" height="55" rx="6"/></g>
+</svg>

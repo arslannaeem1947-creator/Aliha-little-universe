@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 650">
+<path d="M85 610V300 C85 120 190 45 300 45 C410 45 515 120 515 300V610" fill="none" stroke="#ead6c0" stroke-width="70"/>
+<path d="M95 610V305 C95 135 190 70 300 70 C410 70 505 135 505 305V610" fill="none" stroke="#fff0dc" stroke-width="14"/>
+<g fill="#e9689d"><circle cx="125" cy="190" r="25"/><circle cx="180" cy="100" r="28"/><circle cx="245" cy="65" r="22"/><circle cx="370" cy="70" r="24"/><circle cx="440" cy="120" r="28"/><circle cx="480" cy="205" r="25"/></g>
+<g fill="#69a95b"><ellipse cx="150" cy="150" rx="45" ry="15" transform="rotate(-35 150 150)"/><ellipse cx="440" cy="155" rx="45" ry="15" transform="rotate(35 440 155)"/></g>
+</svg>

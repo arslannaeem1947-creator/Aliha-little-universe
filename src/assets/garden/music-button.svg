@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 430 110">
+<rect x="5" y="5" width="420" height="100" rx="50" fill="#34245e" stroke="#d6b9ff" stroke-width="4"/>
+<text x="55" y="70" font-family="Arial" font-size="27" fill="#fff">♫</text>
+<text x="105" y="67" font-family="Arial" font-size="25" fill="#fff">Play Music</text>
+<circle cx="365" cy="55" r="34" fill="#ff5eb5"/>
+<path d="M355 39L382 55L355 71Z" fill="#fff"/>
+</svg>

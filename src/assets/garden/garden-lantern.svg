@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 330">
+<path d="M90 30V5" stroke="#5b4140" stroke-width="10"/>
+<path d="M55 45 Q90 15 125 45 L142 95 L125 230 Q90 255 55 230L38 95Z" fill="#f5c46d" stroke="#6b4b42" stroke-width="8"/>
+<path d="M55 75H125M50 220H130" stroke="#6b4b42" stroke-width="10"/>
+<ellipse cx="90" cy="145" rx="30" ry="55" fill="#fff0a8" opacity=".8"/>
+<path d="M90 230V315" stroke="#6b4b42" stroke-width="12"/>
+</svg>

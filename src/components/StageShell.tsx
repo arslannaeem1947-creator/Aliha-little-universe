@@ -12,6 +12,8 @@ type Props = {
   noSkyDecor?: boolean
   /** Hide rising ambient sparkles */
   noAmbient?: boolean
+  /** Break out of max-width shell — full viewport scene */
+  fullBleed?: boolean
   mascot?: MascotMood | false
   mascotClassName?: string
 }
@@ -23,6 +25,7 @@ export function StageShell({
   noGround = false,
   noSkyDecor = false,
   noAmbient = false,
+  fullBleed = false,
   mascot = 'idle',
   mascotClassName = '',
 }: Props) {
@@ -32,9 +35,11 @@ export function StageShell({
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.35 }}
-      className={`relative flex min-h-dvh w-full flex-col items-center justify-center overflow-hidden px-4 pt-12 md:px-8 ${
-        dark || noGround ? 'pb-12' : 'pb-28'
-      } ${dark ? 'night-bg text-blush' : 'paper-bg text-ink'} ${className}`}
+      className={`relative flex min-h-dvh w-full flex-col items-center justify-center overflow-hidden ${
+        fullBleed ? 'px-0 pt-0' : 'px-4 pt-12 md:px-8'
+      } ${dark || noGround || fullBleed ? 'pb-0' : 'pb-28'} ${
+        dark ? 'night-bg text-blush' : 'paper-bg text-ink'
+      } ${className}`}
     >
       {!dark && !noSkyDecor && <DaySkyDecor />}
       {dark && <NightSkyDecor />}
@@ -50,7 +55,11 @@ export function StageShell({
         </div>
       )}
 
-      <div className="relative z-10 flex w-full max-w-5xl flex-1 flex-col items-center justify-center">
+      <div
+        className={`relative z-10 flex w-full flex-1 flex-col items-center ${
+          fullBleed ? 'max-w-none justify-stretch' : 'max-w-5xl justify-center'
+        }`}
+      >
         {children}
       </div>
     </motion.section>
@@ -58,110 +67,119 @@ export function StageShell({
 }
 
 function DaySkyDecor() {
-  const clouds = [
-    { top: '8%', left: '4%', w: 90, delay: 0 },
-    { top: '14%', left: '55%', w: 120, delay: 1.2 },
-    { top: '6%', left: '78%', w: 70, delay: 0.6 },
-    { top: '22%', left: '28%', w: 100, delay: 2 },
-    { top: '18%', left: '88%', w: 60, delay: 1.5 },
+  const mists = [
+    { top: '10%', left: '2%', w: 140, delay: 0, opacity: 0.2 },
+    { top: '16%', left: '48%', w: 180, delay: 1.4, opacity: 0.16 },
+    { top: '8%', left: '72%', w: 110, delay: 0.7, opacity: 0.22 },
+    { top: '26%', left: '22%', w: 150, delay: 2.1, opacity: 0.14 },
   ]
   return (
     <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
-      {/* sun — fully in-frame with soft rays */}
+      {/* Soft romantic moon / warm glow */}
       <motion.div
-        className="absolute right-[10%] top-[9%] flex h-20 w-20 items-center justify-center md:right-[12%] md:top-[10%] md:h-24 md:w-24"
-        animate={{ scale: [1, 1.05, 1], rotate: [0, 8, 0] }}
-        transition={{ repeat: Infinity, duration: 8, ease: 'easeInOut' }}
+        className="absolute right-[9%] top-[8%] h-24 w-24 md:right-[11%] md:top-[9%] md:h-28 md:w-28"
+        animate={{ scale: [1, 1.04, 1], opacity: [0.9, 1, 0.9] }}
+        transition={{ repeat: Infinity, duration: 7, ease: 'easeInOut' }}
       >
-        <div className="absolute inset-[-28%] rounded-full bg-sunny/25 blur-md" />
-        <div className="absolute inset-[-12%] rounded-full bg-sunny/40 blur-[2px]" />
-        {[0, 45, 90, 135].map((deg) => (
-          <div
-            key={deg}
-            className="absolute h-[118%] w-1.5 rounded-full bg-sunny/35"
-            style={{ transform: `rotate(${deg}deg)` }}
-          />
-        ))}
-        <div className="relative h-[72%] w-[72%] rounded-full bg-gradient-to-br from-[#fff6b0] to-[#ffe566] shadow-[0_0_28px_rgba(255,229,102,0.75)]" />
+        <div className="absolute inset-[-45%] rounded-full bg-[#ffb4c8]/25 blur-2xl" />
+        <div className="absolute inset-[-20%] rounded-full bg-[#ffe0a8]/30 blur-xl" />
+        <div className="relative h-full w-full rounded-full bg-gradient-to-br from-[#fff6e8] via-[#ffe3b0] to-[#ffc98a] shadow-[0_0_40px_rgba(255,200,140,0.55)]" />
+        <div className="absolute right-[18%] top-[22%] h-[58%] w-[58%] rounded-full bg-[#5a3d7a]/28" />
       </motion.div>
-      {clouds.map((c, i) => (
+
+      {/* Soft mist ribbons instead of cartoon clouds */}
+      {mists.map((m, i) => (
         <motion.div
           key={i}
-          className="absolute"
-          style={{ top: c.top, left: c.left, width: c.w }}
-          animate={{ x: [0, 28, 0] }}
+          className="absolute rounded-full bg-gradient-to-r from-transparent via-white/25 to-transparent blur-md"
+          style={{
+            top: m.top,
+            left: m.left,
+            width: m.w,
+            height: m.w * 0.22,
+            opacity: m.opacity,
+          }}
+          animate={{ x: [0, 24, 0], opacity: [m.opacity * 0.7, m.opacity, m.opacity * 0.7] }}
           transition={{
             repeat: Infinity,
-            duration: 10 + i * 2,
-            delay: c.delay,
+            duration: 14 + i * 2,
+            delay: m.delay,
             ease: 'easeInOut',
           }}
+        />
+      ))}
+
+      {/* Subtle floating spark accents near top */}
+      {[12, 28, 55, 70, 88].map((left, i) => (
+        <motion.span
+          key={left}
+          className="absolute text-gold-soft/50"
+          style={{ left: `${left}%`, top: `${10 + (i % 3) * 8}%`, fontSize: 10 + (i % 3) * 3 }}
+          animate={{ opacity: [0.2, 0.75, 0.2], y: [0, -6, 0] }}
+          transition={{ repeat: Infinity, duration: 3 + i * 0.4, delay: i * 0.3 }}
         >
-          <Cloud width={c.w} />
-        </motion.div>
+          ✦
+        </motion.span>
       ))}
     </div>
   )
 }
 
-function Cloud({ width }: { width: number }) {
-  const h = width * 0.45
-  return (
-    <svg width={width} height={h} viewBox="0 0 120 54" aria-hidden className="opacity-90">
-      <ellipse cx="40" cy="32" rx="28" ry="18" fill="#fff" />
-      <ellipse cx="68" cy="28" rx="32" ry="20" fill="#fff" />
-      <ellipse cx="90" cy="34" rx="22" ry="14" fill="#fff" />
-      <ellipse cx="55" cy="36" rx="40" ry="14" fill="#fff" />
-    </svg>
-  )
-}
-
 function GrassGround() {
   return (
-    <div aria-hidden className="pointer-events-none absolute inset-x-0 bottom-0 z-[1] h-[22%] min-h-[120px]">
+    <div aria-hidden className="pointer-events-none absolute inset-x-0 bottom-0 z-[1] h-[24%] min-h-[130px]">
       <svg
         className="absolute inset-x-0 bottom-0 h-full w-full"
-        viewBox="0 0 1440 200"
+        viewBox="0 0 1440 220"
         preserveAspectRatio="none"
       >
         <path
-          d="M0 80 Q180 40 360 70 T720 55 T1080 75 T1440 50 L1440 200 L0 200 Z"
-          fill="#8fe0a8"
+          d="M0 90 Q200 40 420 75 T840 55 T1200 80 T1440 60 L1440 220 L0 220 Z"
+          fill="#6b3d5c"
+          opacity="0.85"
         />
         <path
-          d="M0 110 Q200 70 400 100 T800 85 T1200 105 T1440 90 L1440 200 L0 200 Z"
-          fill="#5cbc7a"
+          d="M0 120 Q240 70 480 110 T960 90 T1280 115 T1440 100 L1440 220 L0 220 Z"
+          fill="#4a2a45"
+        />
+        <path
+          d="M0 155 Q300 125 600 150 T1100 140 T1440 155 L1440 220 L0 220 Z"
+          fill="#3a2038"
+          opacity="0.9"
         />
       </svg>
-      {/* little flowers on grass */}
-      {[8, 18, 32, 48, 62, 75, 88].map((left, i) => (
-        <span
+      {/* Soft rose glow along horizon */}
+      <div className="absolute inset-x-0 top-0 h-16 bg-gradient-to-b from-[#ff8fab]/20 to-transparent" />
+      {[10, 26, 44, 62, 78, 90].map((left, i) => (
+        <motion.span
           key={left}
-          className="absolute bottom-[18%] text-sm md:text-base"
-          style={{ left: `${left}%`, transform: `rotate(${(i % 3) * 8 - 8}deg)` }}
+          className="absolute bottom-[22%] text-base opacity-70 md:text-lg"
+          style={{ left: `${left}%` }}
+          animate={{ y: [0, -5, 0], opacity: [0.45, 0.8, 0.45] }}
+          transition={{ repeat: Infinity, duration: 3.2 + i * 0.25, delay: i * 0.2 }}
         >
-          {i % 2 === 0 ? '🌼' : '🌸'}
-        </span>
+          {i % 3 === 0 ? '💕' : i % 3 === 1 ? '✨' : '💗'}
+        </motion.span>
       ))}
     </div>
   )
 }
 
 function AmbientFloaters() {
-  const items = Array.from({ length: 18 }, (_, i) => ({
+  const items = Array.from({ length: 14 }, (_, i) => ({
     id: i,
-    left: (i * 5.7 + 2) % 100,
-    delay: i * 0.45,
-    dur: 11 + (i % 5),
-    size: 10 + (i % 4) * 5,
-    char: (['✦', '♥', '❀', '✧', '⭐'] as const)[i % 5],
+    left: (i * 7.1 + 3) % 100,
+    delay: i * 0.55,
+    dur: 13 + (i % 5),
+    size: 12 + (i % 4) * 4,
+    char: (['♥', '✦', '❀', '✧', '💕'] as const)[i % 5],
     color: (
       [
-        'text-rose/45',
-        'text-sunny/55',
-        'text-lavender/50',
-        'text-sky/50',
-        'text-bubble/45',
+        'text-rose/40',
+        'text-gold-soft/45',
+        'text-bubble/40',
+        'text-lavender/35',
+        'text-blush/50',
       ] as const
     )[i % 5],
   }))

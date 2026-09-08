@@ -85,12 +85,36 @@ export function GardenStage({ onNext }: Props) {
   }
 
   return (
-    <StageShell mascot="cheer" noGround className="!pb-0">
-      <div className="relative -mx-4 flex min-h-[min(92dvh,820px)] w-[calc(100%+2rem)] max-w-none flex-col overflow-hidden md:-mx-8 md:w-[calc(100%+4rem)]">
-        {/* Full garden sky already from StageShell; add garden floor */}
+    <StageShell
+      mascot="cheer"
+      noGround
+      noSkyDecor
+      noAmbient
+      fullBleed
+      className="!p-0"
+    >
+      <div className="relative min-h-dvh w-full flex-1 overflow-hidden">
+        {/* Full-screen garden sky */}
         <div
           aria-hidden
-          className="pointer-events-none absolute inset-x-0 bottom-0 h-[42%] bg-gradient-to-t from-[#5cbc7a] via-[#8fe0a8] to-transparent"
+          className="pointer-events-none absolute inset-0"
+          style={{
+            background: `
+              radial-gradient(ellipse at 78% 10%, rgba(255, 220, 140, 0.45), transparent 42%),
+              radial-gradient(ellipse at 20% 20%, rgba(255, 170, 200, 0.25), transparent 45%),
+              linear-gradient(180deg, #7ec8ff 0%, #b8e4ff 22%, #e8f6ff 42%, #dff8e8 62%, #8fe0a8 82%, #5cbc7a 100%)
+            `,
+          }}
+        />
+
+        {/* Full garden floor — covers lower half edge-to-edge */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-x-0 bottom-0 h-[48%] bg-gradient-to-t from-[#3d9a5c] via-[#5cbc7a] to-transparent"
+        />
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-x-0 bottom-0 h-[28%] bg-gradient-to-t from-[#2f8a50] to-transparent"
         />
 
         {/* Path */}
@@ -104,16 +128,16 @@ export function GardenStage({ onNext }: Props) {
         <img
           src={gardenArch}
           alt=""
-          className="pointer-events-none absolute left-1/2 top-[-2%] z-[3] h-[58%] w-auto max-w-[min(92vw,520px)] -translate-x-1/2 object-contain opacity-95"
+          className="pointer-events-none absolute left-1/2 top-[2%] z-[3] h-[min(52dvh,420px)] w-auto max-w-[min(92vw,560px)] -translate-x-1/2 object-contain opacity-95"
         />
 
         {/* Trellis sign */}
-        <div className="absolute left-1/2 top-[6%] z-20 w-[min(78vw,280px)] -translate-x-1/2 md:top-[8%]">
+        <div className="absolute left-1/2 top-[8%] z-20 w-[min(78vw,300px)] -translate-x-1/2 md:top-[10%]">
           <img src={trellisSign} alt={GARDEN_HINT} className="w-full drop-shadow-lg" />
         </div>
 
         {/* Windmill — left */}
-        <div className="absolute bottom-[28%] left-[-2%] z-[4] md:left-[2%]">
+        <div className="absolute bottom-[28%] left-[1%] z-[4] md:left-[4%]">
           <Windmill size={110} className="md:!w-[150px]" />
         </div>
 
@@ -121,7 +145,7 @@ export function GardenStage({ onNext }: Props) {
         <img
           src={gardenLantern}
           alt=""
-          className="pointer-events-none absolute bottom-[30%] right-[2%] z-[4] w-14 drop-shadow-md md:w-20"
+          className="pointer-events-none absolute bottom-[30%] right-[3%] z-[4] w-14 drop-shadow-md md:right-[5%] md:w-20"
         />
 
         {/* Leaf clusters */}
@@ -226,7 +250,7 @@ export function GardenStage({ onNext }: Props) {
 
         {giftOpen && (
           <motion.div
-            className="absolute inset-x-4 bottom-[12%] z-40 mx-auto flex max-w-lg flex-col items-center md:inset-x-auto"
+            className="absolute inset-x-4 bottom-[10%] z-40 mx-auto flex max-w-lg flex-col items-center md:inset-x-auto"
             initial={{ opacity: 0, y: 30, scale: 0.9 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             transition={{ type: 'spring', stiffness: 240, damping: 16 }}

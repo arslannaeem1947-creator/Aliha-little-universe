@@ -1,19 +1,15 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { StageShell } from '../components/StageShell'
 import { HER_NAME } from '../data/content'
 
 type Props = { onNext: () => void }
 
-type CakePhase = 'waiting' | 'layers' | 'lit' | 'blowing' | 'party'
-
-const LAYER_COLORS = [
-  { fill: 'linear-gradient(180deg,#ffe9a8 0%,#ffd56a 100%)', width: 200, label: 'base' },
-  { fill: 'linear-gradient(180deg,#ffb3d1 0%,#ff6b9d 100%)', width: 150, label: 'mid' },
-  { fill: 'linear-gradient(180deg,#fff5fb 0%,#ffd0e4 100%)', width: 100, label: 'top' },
-] as const
+type CakePhase = 'waiting' | 'layers' | 'candles' | 'lit' | 'blowing' | 'party'
 
 const PARTY = ['🎉', '🎊', '💖', '✨', '⭐', '🎈', '💕', '🥳', '🌸', '💛']
+/** Pause after blow so she can enjoy the party rain */
+const PARTY_VIEW_MS = 3600
 
 export function BloomStage({ onNext }: Props) {
   const [phase, setPhase] = useState(0)
@@ -21,6 +17,7 @@ export function BloomStage({ onNext }: Props) {
   const [layersIn, setLayersIn] = useState(0)
   const [blowProgress, setBlowProgress] = useState(0)
   const [candlesLit, setCandlesLit] = useState(false)
+  const [showNext, setShowNext] = useState(false)
 
   const stars = useMemo(
     () =>
@@ -71,19 +68,27 @@ export function BloomStage({ onNext }: Props) {
     }
   }, [])
 
-  // Drop layers one by one
+  // Drop layers one by one: base → mid → top
   useEffect(() => {
     if (cakePhase !== 'layers') return
     if (layersIn >= 3) {
-      const t = setTimeout(() => {
-        setCandlesLit(true)
-        setCakePhase('lit')
-      }, 450)
+      // Short settle, then fade candles in
+      const t = setTimeout(() => setCakePhase('candles'), 500)
       return () => clearTimeout(t)
     }
-    const t = setTimeout(() => setLayersIn((n) => n + 1), layersIn === 0 ? 200 : 650)
+    // First layer almost immediately; each next waits for previous giggle to finish
+    const delay = layersIn === 0 ? 280 : 900
+    const t = setTimeout(() => setLayersIn((n) => n + 1), delay)
     return () => clearTimeout(t)
   }, [cakePhase, layersIn])
+
+  // Candles fade in after top layer lands
+  useEffect(() => {
+    if (cakePhase !== 'candles') return
+    setCandlesLit(true)
+    const t = setTimeout(() => setCakePhase('lit'), 900)
+    return () => clearTimeout(t)
+  }, [cakePhase])
 
   // Blow hold progress
   useEffect(() => {
@@ -91,12 +96,22 @@ export function BloomStage({ onNext }: Props) {
     if (blowProgress >= 100) {
       setCandlesLit(false)
       setCakePhase('party')
-      setPhase(3)
+      setShowNext(false)
       return
     }
     const t = setTimeout(() => setBlowProgress((p) => Math.min(100, p + 4)), 40)
     return () => clearTimeout(t)
   }, [cakePhase, blowProgress])
+
+  // After party starts, wait 3–4s before showing next button
+  useEffect(() => {
+    if (cakePhase !== 'party') return
+    const t = setTimeout(() => {
+      setShowNext(true)
+      setPhase(3)
+    }, PARTY_VIEW_MS)
+    return () => clearTimeout(t)
+  }, [cakePhase])
 
   const startBlow = () => {
     if (cakePhase !== 'lit') return
@@ -265,93 +280,84 @@ export function BloomStage({ onNext }: Props) {
           </div>
 
           <div className="relative z-30 mt-2 flex flex-1 flex-col items-center justify-end pb-4">
-            <div className="relative flex flex-col items-center">
-              {/* Candles sit on top once layers are in */}
-              {layersIn >= 3 && (
-                <div className="relative z-20 mb-[-8px] flex items-end gap-3">
-                  {[0, 1, 2, 3, 4].map((i) => (
-                    <Candle key={i} index={i} lit={candlesLit} blowing={cakePhase === 'blowing'} />
-                  ))}
-                </div>
-              )}
+            {/* Cake stage — fixed slots so each layer falls into ITS place only */}
+            <div className="relative h-[250px] w-[260px] overflow-visible">
+              <div className="absolute bottom-1 left-1/2 h-4 w-52 -translate-x-1/2 rounded-[100%] bg-white/20 blur-[2px]" />
 
-              {/* Cake layers falling one-by-one */}
-              <div className="relative flex w-[280px] flex-col-reverse items-center">
-                <div className="absolute -bottom-2 left-1/2 h-5 w-56 -translate-x-1/2 rounded-[100%] bg-white/25 blur-[2px]" />
+              {/* BASE slot */}
+              <CakeLayer
+                show={layersIn >= 1}
+                width={210}
+                height={56}
+                bottom={0}
+                fill="linear-gradient(180deg,#ffe9a8 0%,#ffd56a 100%)"
+                frosting="#fff6c8"
+                dot="#ff6b9d"
+                dots={5}
+                fallFrom={-320}
+                tilt={-10}
+              />
 
-                {LAYER_COLORS.map((layer, index) => {
-                  const visible = layersIn > index
-                  const height = index === 0 ? 58 : index === 1 ? 46 : 38
-                  return (
+              {/* MID slot — falls directly onto mid height, never to base */}
+              <CakeLayer
+                show={layersIn >= 2}
+                width={158}
+                height={44}
+                bottom={48}
+                fill="linear-gradient(180deg,#ffb3d1 0%,#ff6b9d 100%)"
+                frosting="#ffc4dc"
+                dot="#fff"
+                dots={4}
+                fallFrom={-360}
+                tilt={12}
+              />
+
+              {/* TOP slot — falls directly onto top height */}
+              <CakeLayer
+                show={layersIn >= 3}
+                width={108}
+                height={36}
+                bottom={84}
+                fill="linear-gradient(180deg,#fff5fb 0%,#ffd0e4 100%)"
+                frosting="#ffffff"
+                dot="#ff6b9d"
+                dots={3}
+                fallFrom={-400}
+                tilt={-8}
+                heart
+              >
+                {/* Candles planted into the top frosting */}
+                <AnimatePresence>
+                  {(cakePhase === 'candles' ||
+                    cakePhase === 'lit' ||
+                    cakePhase === 'blowing' ||
+                    cakePhase === 'party') && (
                     <motion.div
-                      key={layer.label}
-                      className="relative z-10"
-                      style={{ marginBottom: index === 0 ? 0 : -10, width: layer.width }}
-                      initial={{ y: -420, opacity: 0, rotate: -12 }}
-                      animate={
-                        visible
-                          ? {
-                              y: 0,
-                              opacity: 1,
-                              rotate: [0, -3, 3, -2, 2, -1, 0],
-                              scale: [1, 1.04, 0.98, 1.02, 1],
-                            }
-                          : { y: -420, opacity: 0, rotate: -12 }
-                      }
-                      transition={
-                        visible
-                          ? {
-                              y: { type: 'spring', stiffness: 220, damping: 14, mass: 0.9 },
-                              opacity: { duration: 0.2 },
-                              rotate: { duration: 0.7, delay: 0.15 },
-                              scale: { duration: 0.55, delay: 0.1 },
-                            }
-                          : { duration: 0 }
-                      }
+                      key="candles"
+                      className="absolute inset-x-1 z-20 flex items-end justify-center gap-1.5"
+                      style={{ bottom: 28 }}
+                      initial={{ opacity: 0, y: 6 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.7, ease: 'easeOut' }}
                     >
-                      <div
-                        className="rounded-[1.1rem] border-[3px] border-white shadow-[0_8px_0_rgba(0,0,0,0.12)]"
-                        style={{
-                          height,
-                          background: layer.fill,
-                        }}
-                      />
-                      {/* frosting oval top */}
-                      <div
-                        className="absolute left-1/2 top-0 h-4 -translate-x-1/2 -translate-y-1/2 rounded-[100%] border-2 border-white/80"
-                        style={{
-                          width: '92%',
-                          background:
-                            index === 0 ? '#fff6c8' : index === 1 ? '#ffc4dc' : '#ffffff',
-                        }}
-                      />
-                      {/* dots */}
-                      <div className="absolute inset-x-3 top-1/2 flex -translate-y-1/2 justify-around">
-                        {Array.from({ length: index === 0 ? 5 : 4 }).map((_, d) => (
-                          <span
-                            key={d}
-                            className="h-2.5 w-2.5 rounded-full border border-white/70"
-                            style={{
-                              background: index === 1 ? '#fff' : '#ff6b9d',
-                              opacity: index === 2 ? 0.5 : 1,
-                            }}
-                          />
-                        ))}
-                      </div>
-                      {index === 2 && (
-                        <span className="absolute left-1/2 top-[-18px] -translate-x-1/2 text-lg">❤️</span>
-                      )}
+                      {[0, 1, 2, 3, 4].map((i) => (
+                        <Candle
+                          key={i}
+                          index={i}
+                          lit={candlesLit}
+                          blowing={cakePhase === 'blowing'}
+                        />
+                      ))}
                     </motion.div>
-                  )
-                })}
-              </div>
+                  )}
+                </AnimatePresence>
+              </CakeLayer>
 
-              {/* Blow wind lines while blowing */}
               {cakePhase === 'blowing' && (
                 <motion.div
-                  className="pointer-events-none absolute -left-8 top-2 z-30 text-2xl"
-                  animate={{ x: [0, 40], opacity: [0, 1, 0] }}
-                  transition={{ repeat: Infinity, duration: 0.45 }}
+                  className="pointer-events-none absolute left-[8%] top-[8%] z-40 text-2xl"
+                  animate={{ x: [0, 55], opacity: [0, 1, 0] }}
+                  transition={{ repeat: Infinity, duration: 0.4 }}
                 >
                   💨
                 </motion.div>
@@ -363,7 +369,6 @@ export function BloomStage({ onNext }: Props) {
               className="pointer-events-none absolute bottom-20 left-1/2 h-16 w-[70%] max-w-md -translate-x-1/2 rounded-[100%] bg-rose/30 blur-2xl"
             />
 
-            {/* Blow CTA */}
             <div className="relative z-30 mt-8 flex min-h-[5.5rem] flex-col items-center justify-center gap-3">
               <AnimatePresence mode="wait">
                 {cakePhase === 'lit' && (
@@ -417,16 +422,28 @@ export function BloomStage({ onNext }: Props) {
                   </motion.div>
                 )}
 
-                {cakePhase === 'party' && (
+                {cakePhase === 'party' && !showNext && (
+                  <motion.p
+                    key="enjoy"
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0 }}
+                    className="font-display text-lg font-extrabold text-gold-soft"
+                  >
+                    make a wish — candles out! ✨
+                  </motion.p>
+                )}
+
+                {cakePhase === 'party' && showNext && (
                   <motion.div
                     key="next"
                     initial={{ opacity: 0, y: 12, scale: 0.92 }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}
-                    transition={{ type: 'spring', stiffness: 260, damping: 16, delay: 0.35 }}
+                    transition={{ type: 'spring', stiffness: 260, damping: 16 }}
                     className="flex flex-col items-center gap-2"
                   >
                     <p className="font-display text-lg font-extrabold text-gold-soft">
-                      make a wish — candles out! ✨
+                      ready for more? 💗
                     </p>
                     <motion.button
                       type="button"
@@ -448,6 +465,90 @@ export function BloomStage({ onNext }: Props) {
   )
 }
 
+function CakeLayer({
+  show,
+  width,
+  height,
+  bottom,
+  fill,
+  frosting,
+  dot,
+  dots,
+  fallFrom,
+  tilt,
+  heart,
+  children,
+}: {
+  show: boolean
+  width: number
+  height: number
+  bottom: number
+  fill: string
+  frosting: string
+  dot: string
+  dots: number
+  fallFrom: number
+  tilt: number
+  heart?: boolean
+  children?: ReactNode
+}) {
+  return (
+    <AnimatePresence>
+      {show && (
+        <motion.div
+          key={`layer-${bottom}`}
+          className="absolute left-1/2"
+          style={{
+            bottom,
+            width,
+            marginLeft: -width / 2,
+            zIndex: 10 + Math.round(bottom / 10),
+          }}
+          initial={{ y: fallFrom, opacity: 0, rotate: tilt }}
+          animate={{ y: 0, opacity: 1, rotate: 0 }}
+          transition={{
+            // Tween fall into THIS slot only — no bounce that looks like climbing from base
+            y: { duration: 0.72, ease: [0.22, 1.1, 0.36, 1] },
+            opacity: { duration: 0.18 },
+            rotate: { duration: 0.72, ease: 'easeOut' },
+          }}
+        >
+          <motion.div
+            initial={{ rotate: 0, scale: 1 }}
+            animate={{ rotate: [0, -2.5, 2.2, -1.2, 0], scale: [1, 1.02, 0.99, 1] }}
+            transition={{ duration: 0.42, delay: 0.68, ease: 'easeOut' }}
+            className="relative"
+          >
+            <div
+              className="rounded-[1.15rem] border-[3px] border-white shadow-[0_8px_0_rgba(0,0,0,0.14)]"
+              style={{ height, background: fill }}
+            />
+            <div
+              className="absolute left-1/2 top-0 z-[1] h-[14px] -translate-x-1/2 -translate-y-1/2 rounded-[100%] border-2 border-white/85"
+              style={{ width: '94%', background: frosting }}
+            />
+            <div className="absolute inset-x-4 top-1/2 z-[1] flex -translate-y-1/2 justify-around">
+              {Array.from({ length: dots }).map((_, d) => (
+                <span
+                  key={d}
+                  className="h-2.5 w-2.5 rounded-full border border-white/60 shadow-sm"
+                  style={{ background: dot }}
+                />
+              ))}
+            </div>
+            {heart && (
+              <span className="pointer-events-none absolute left-1/2 top-[42%] z-[2] -translate-x-1/2 -translate-y-1/2 text-sm drop-shadow-sm">
+                ❤️
+              </span>
+            )}
+            {children}
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  )
+}
+
 function Candle({
   index,
   lit,
@@ -457,48 +558,93 @@ function Candle({
   lit: boolean
   blowing: boolean
 }) {
+  const wax = ['#ff7aa8', '#6eb8ff', '#ffe066', '#b8a0ff', '#ff9ec7'][index]
+  const waxDeep = ['#e04878', '#3d8fd4', '#e0b020', '#7a62d4', '#e070a0'][index]
+
   return (
-    <div className="flex flex-col items-center">
+    <div className="relative flex w-[18px] flex-col items-center">
       <AnimatePresence>
         {lit && (
           <motion.div
             key="flame"
-            className="mb-0.5 h-4 w-2.5 origin-bottom rounded-full"
-            style={{
-              background: 'linear-gradient(180deg, #fff6b0, #ff9a3c)',
-              boxShadow: '0 0 14px rgba(255,180,60,0.9)',
-            }}
-            initial={{ scaleY: 0, opacity: 0 }}
+            className="relative z-[2] mb-[-1px] h-[18px] w-[11px] origin-bottom"
+            initial={{ opacity: 0, scale: 0.35, y: 3 }}
             animate={
               blowing
-                ? { scaleY: [1, 0.4, 0.7, 0.2], opacity: [1, 0.6, 0.8, 0.3], x: [0, 3, -4, 2], rotate: [0, 12, -18, 8] }
-                : { scaleY: [0.85, 1.2, 0.9, 1.15, 0.85], opacity: 1, x: [0, 0.5, -0.5, 0] }
+                ? {
+                    opacity: [1, 0.45, 0.75, 0.15],
+                    scaleY: [1, 0.4, 0.65, 0.2],
+                    x: [0, 2, -3, 1],
+                    rotate: [0, 10, -14, 6],
+                  }
+                : {
+                    opacity: 1,
+                    scale: 1,
+                    y: 0,
+                    scaleY: [1, 1.18, 0.9, 1.12, 1],
+                    x: [0, 0.35, -0.35, 0],
+                  }
             }
-            exit={{ scaleY: 0, opacity: 0, y: -6, transition: { duration: 0.25 } }}
+            exit={{ opacity: 0, scale: 0, y: -3, transition: { duration: 0.2 } }}
             transition={{
-              scaleY: { repeat: Infinity, duration: blowing ? 0.25 : 0.55 + index * 0.07, ease: 'easeInOut' },
-              x: { repeat: Infinity, duration: blowing ? 0.2 : 0.7 },
-              rotate: { repeat: Infinity, duration: 0.22 },
+              opacity: { duration: 0.4, delay: index * 0.06 },
+              scale: { duration: 0.4, delay: index * 0.06 },
+              scaleY: {
+                repeat: Infinity,
+                duration: blowing ? 0.2 : 0.52 + index * 0.05,
+                ease: 'easeInOut',
+              },
+              x: { repeat: Infinity, duration: blowing ? 0.16 : 0.6 },
+              rotate: { repeat: Infinity, duration: 0.18 },
             }}
-          />
+          >
+            <div
+              className="absolute inset-0"
+              style={{
+                borderRadius: '50% 50% 50% 50% / 55% 55% 45% 45%',
+                background:
+                  'radial-gradient(circle at 50% 72%, #fffce8 0%, #ffe566 28%, #ffb347 58%, #ff6b35 100%)',
+                boxShadow:
+                  '0 0 8px rgba(255, 200, 80, 0.95), 0 0 16px rgba(255, 120, 40, 0.5)',
+              }}
+            />
+            <div className="absolute left-1/2 top-[38%] h-[7px] w-[4px] -translate-x-1/2 rounded-full bg-white/85" />
+          </motion.div>
         )}
       </AnimatePresence>
+
       {!lit && (
         <motion.span
-          initial={{ opacity: 0, y: 4 }}
-          animate={{ opacity: [0, 0.7, 0], y: [-2, -14] }}
-          transition={{ duration: 1.1, delay: index * 0.05 }}
-          className="mb-0.5 text-[10px] text-white/50"
+          initial={{ opacity: 0, y: 2 }}
+          animate={{ opacity: [0, 0.55, 0], y: [0, -10] }}
+          transition={{ duration: 0.9, delay: index * 0.04 }}
+          className="mb-[-1px] text-[8px] leading-none text-white/40"
         >
           ☁️
         </motion.span>
       )}
-      <div
-        className="h-9 w-2 rounded-sm border border-white/40"
-        style={{
-          background: ['#ff6b9d', '#7ec8ff', '#ffe566', '#c9b6ff', '#ff9ec7'][index],
-        }}
-      />
+
+      <div className="z-[1] h-[5px] w-[1.5px] rounded-full bg-[#2a1a36]/90" />
+
+      {/* Glossy wax with soft drip tip into frosting */}
+      <div className="relative">
+        <div
+          className="relative h-8 w-[8px] overflow-hidden rounded-[4px_4px_2px_2px] border border-white/55 shadow-[1px_2px_0_rgba(0,0,0,0.14)]"
+          style={{
+            background: `linear-gradient(90deg, ${waxDeep} 0%, ${wax} 32%, #ffffffcc 48%, ${wax} 68%, ${waxDeep} 100%)`,
+          }}
+        >
+          <div className="absolute inset-y-1.5 left-[1.5px] w-[1.5px] rounded-full bg-white/50" />
+          <div
+            className="absolute bottom-0 left-1/2 h-1.5 w-3 -translate-x-1/2 rounded-b-full opacity-80"
+            style={{ background: wax }}
+          />
+        </div>
+        <div
+          className="absolute -bottom-0.5 left-1/2 h-1.5 w-2.5 -translate-x-1/2 rounded-[50%]"
+          style={{ background: waxDeep, opacity: 0.55 }}
+        />
+      </div>
     </div>
   )
 }

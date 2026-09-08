@@ -91,16 +91,18 @@ button {
 
 .paper-bg {
   background:
+    radial-gradient(ellipse at 82% 8%, rgba(255, 200, 140, 0.35), transparent 40%),
+    radial-gradient(ellipse at 18% 25%, rgba(255, 140, 180, 0.22), transparent 46%),
+    radial-gradient(ellipse at 50% 100%, rgba(90, 40, 80, 0.18), transparent 50%),
     linear-gradient(
       180deg,
-      #a8dcff 0%,
-      #c5e9ff 14%,
-      #e0f4ff 28%,
-      #f3f7ff 40%,
-      #fff5fb 52%,
-      #fff8ef 66%,
-      #eefce8 82%,
-      #d6f2d0 100%
+      #2f2448 0%,
+      #4a3568 18%,
+      #6b4578 36%,
+      #8f5a7e 52%,
+      #c47a8e 68%,
+      #e8a0a8 84%,
+      #f3c4bc 100%
     );
 }
 
